@@ -1,0 +1,60 @@
+{
+  "name": "mcp-research-agent-eval-dataset",
+  "description": "Evaluation dataset for MCP Research Agent",
+  "created_at": "2025-11-17 13:53:42.037482+00:00",
+  "examples_count": 4,
+  "examples": [
+    {
+      "inputs": {
+        "question": "Research observability platforms for AI agents, analyze their features, and recommend the best approach"
+      },
+      "outputs": {
+        "expected": "Comprehensive research should cover multiple observability platforms (LangSmith, Phoenix, LangFuse), analyze features, provide comparative analysis, and give clear recommendations based on use case."
+      },
+      "metadata": {
+        "dataset_split": [
+          "base"
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Provide strategic recommendations for implementing AI agents in enterprise"
+      },
+      "outputs": {
+        "expected": "Strategic recommendations should include comprehensive analysis, actionable insights on scalability and integration, training programs, and clear implementation roadmap with success metrics."
+      },
+      "metadata": {
+        "dataset_split": [
+          "base"
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Analyze the adoption metrics for LangChain in production systems"
+      },
+      "outputs": {
+        "expected": "LangChain adoption shows strong growth with increasing enterprise usage, positive satisfaction metrics, and recommendations for scalability improvements and integration capabilities."
+      },
+      "metadata": {
+        "dataset_split": [
+          "base"
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "question": "What are the latest trends in AI agent architectures?"
+      },
+      "outputs": {
+        "expected": "Recent trends in AI agent architectures include multi-agent systems, LangChain/LangGraph patterns, and modern orchestration frameworks with focus on production readiness and observability."
+      },
+      "metadata": {
+        "dataset_split": [
+          "base"
+        ]
+      }
+    }
+  ]
+}

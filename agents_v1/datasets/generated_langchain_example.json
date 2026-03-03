@@ -1,0 +1,59 @@
+{
+  "name": "generated-langchain-qa",
+  "description": "Auto-generated dataset about LangChain framework using LLM",
+  "created_at": "2025-11-17 15:10:36.637729+00:00",
+  "examples_count": 3,
+  "examples": [
+    {
+      "inputs": {
+        "question": "How can you use LangChain to create a chatbot that integrates with a knowledge base and retrieves relevant information based on user queries?"
+      },
+      "outputs": {
+        "expected": "A good answer should explain the process of setting up a LangChain application, including details about integrating a language model, connecting to the knowledge base, and implementing retrieval-augmented generation techniques. It should also highlight specific components of LangChain, such as chains, agents, and memory management."
+      },
+      "metadata": {
+        "topic": "LangChain framework",
+        "category": "practical",
+        "generated": true,
+        "difficulty": "medium",
+        "dataset_split": [
+          "base"
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "question": "What are the key components of the LangChain framework that facilitate the development of applications using language models?"
+      },
+      "outputs": {
+        "expected": "A good answer should identify and explain the main components of LangChain, such as the language model integration, data connectors, and chains. It should also highlight how these components interact to streamline the development process and enhance functionality."
+      },
+      "metadata": {
+        "topic": "LangChain framework",
+        "category": "factual",
+        "generated": true,
+        "difficulty": "medium",
+        "dataset_split": [
+          "base"
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "question": "What are the primary components of the LangChain framework and how do they interact to facilitate the development of applications using language models?"
+      },
+      "outputs": {
+        "expected": "A good answer should identify key components such as chains, agents, and memory, and explain their roles in the framework. It should also outline how these components work together to streamline the process of building applications that leverage language models effectively."
+      },
+      "metadata": {
+        "topic": "LangChain framework",
+        "category": "factual",
+        "generated": true,
+        "difficulty": "medium",
+        "dataset_split": [
+          "base"
+        ]
+      }
+    }
+  ]
+}

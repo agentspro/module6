@@ -1,0 +1,72 @@
+{
+  "name": "research-agent-template",
+  "description": "Template dataset for research agents with search and analysis capabilities",
+  "examples": [
+    {
+      "inputs": {
+        "question": "What are the latest trends in [YOUR TOPIC]?"
+      },
+      "outputs": {
+        "expected": "Should discuss recent developments, emerging patterns, and future directions. Include specific examples and data when available."
+      },
+      "metadata": {
+        "category": "trend-analysis",
+        "difficulty": "medium",
+        "requires_tools": ["search", "analyze"]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Compare [FRAMEWORK A] vs [FRAMEWORK B] for [USE CASE]"
+      },
+      "outputs": {
+        "expected": "Should provide balanced comparison covering: features, pros/cons, performance, use cases, and clear recommendation based on requirements."
+      },
+      "metadata": {
+        "category": "comparison",
+        "difficulty": "hard",
+        "requires_tools": ["search", "analyze", "synthesize"]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Analyze the market for [TECHNOLOGY/PRODUCT]"
+      },
+      "outputs": {
+        "expected": "Should include market size, growth trends, key players, challenges, opportunities, and future outlook with supporting data."
+      },
+      "metadata": {
+        "category": "market-analysis",
+        "difficulty": "hard",
+        "requires_tools": ["search", "analyze"]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Provide strategic recommendations for implementing [TECHNOLOGY] in [CONTEXT]"
+      },
+      "outputs": {
+        "expected": "Should include comprehensive analysis, actionable steps, risk assessment, timeline, resources needed, and success metrics."
+      },
+      "metadata": {
+        "category": "recommendations",
+        "difficulty": "hard",
+        "requires_tools": ["search", "analyze", "synthesize"]
+      }
+    },
+    {
+      "inputs": {
+        "question": "Research [TOPIC], analyze key findings, and summarize insights"
+      },
+      "outputs": {
+        "expected": "Multi-step response: thorough research with sources, analytical insights, and clear summary of key takeaways."
+      },
+      "metadata": {
+        "category": "multi-step",
+        "difficulty": "very-hard",
+        "requires_tools": ["search", "analyze", "synthesize"]
+      }
+    }
+  ],
+  "instructions": "Replace placeholders [YOUR TOPIC], [FRAMEWORK A], etc. with your specific domain. Add 10-15 more examples covering edge cases and domain-specific queries."
+}

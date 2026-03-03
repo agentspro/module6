@@ -1,16 +1,24 @@
 """
-АГЕНТ З CALLBACKS - LangChain 1.0 ОФІЦІЙНИЙ API
-Демонструє розширення агентів через callbacks (офіційний механізм LangChain 1.0)
+АГЕНТ З CALLBACKS + PHOENIX ARIZE - Multi-Platform Observability Demo
 
-ОФІЦІЙНИЙ LANGCHAIN 1.0 CALLBACKS API:
-- BaseCallbackHandler для custom callbacks
-- on_llm_start: Викликається перед LLM
-- on_llm_end: Викликається після LLM
-- on_tool_start: Викликається перед tool
-- on_tool_end: Викликається після tool
-- on_agent_action: Викликається при action агента
+Демонструє одночасне використання:
+1. LangChain 1.0 BaseCallbackHandler (логування, security, токени)
+2. LangSmith трейсинг (автоматичний)
+3. Phoenix Arize observability (RAG/embedding візуалізація)
 
-LangSmith Integration: Автоматично трейсить всі callback operations
+ВАЖЛИВО: Потребує встановлення Phoenix:
+    pip install arize-phoenix openinference-instrumentation-langchain
+
+ЗАПУСК:
+1. Термінал 1: python -m phoenix.server.main serve
+2. Термінал 2: python 02_agent_with_middleware_phoenix.py
+3. Phoenix UI: http://localhost:6006
+4. LangSmith: https://smith.langchain.com
+
+OBSERVABILITY STACK:
+- LangSmith: Production tracing, cost tracking
+- Phoenix: Development debugging, detailed traces
+- Custom Callbacks: Business logic monitoring
 """
 
 import os
@@ -20,26 +28,79 @@ from langchain.agents import create_agent
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 from langchain_core.agents import AgentAction, AgentFinish
-from openinference.instrumentation.langchain import LangChainInstrumentor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from dotenv import load_dotenv
 from datetime import datetime
 import json
-import phoenix as px
-from phoenix.otel import register
 
 load_dotenv()
+
+# ============================================================================
+# PHOENIX ARIZE SETUP - Open-source observability
+# ============================================================================
+
+# Check if Phoenix libraries are installed
+PHOENIX_AVAILABLE = False
+try:
+    from phoenix.otel import register
+    from openinference.instrumentation.langchain import LangChainInstrumentor
+    PHOENIX_AVAILABLE = True
+except ImportError:
+    print("⚠️  Phoenix Arize not installed. Install with:")
+    print("   pip install arize-phoenix openinference-instrumentation-langchain")
+    print("   Continuing without Phoenix...\n")
+
+# Initialize Phoenix if available
+if PHOENIX_AVAILABLE:
+    try:
+        # Register Phoenix tracer
+        tracer_provider = register(
+            project_name="langchain-callbacks-demo",
+            endpoint=os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"),
+        )
+
+        # Instrument LangChain
+        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+
+        print("=" * 70)
+        print("🔥 PHOENIX ARIZE OBSERVABILITY ENABLED")
+        print("=" * 70)
+        print("✅ Phoenix instrumentation active")
+        print(f"📊 Project: langchain-callbacks-demo")
+        print(f"🌐 Endpoint: {os.getenv('PHOENIX_COLLECTOR_ENDPOINT', 'http://localhost:6006/v1/traces')}")
+        print("🖥️  UI: http://localhost:6006")
+        print("\n⚠️  Make sure Phoenix server is running:")
+        print("   Terminal 1: python -m phoenix.server.main serve")
+        print("=" * 70 + "\n")
+    except Exception as e:
+        print(f"⚠️  Phoenix setup failed: {e}")
+        print("Continuing without Phoenix...\n")
+        PHOENIX_AVAILABLE = False
 
 # ============================================================================
 # LANGSMITH VERIFICATION
 # ============================================================================
 
 if os.getenv("LANGCHAIN_TRACING_V2") == "true":
-    print("✅ LangSmith трейсинг активний")
+    print("=" * 70)
+    print("✅ LANGSMITH TRACING ENABLED")
+    print("=" * 70)
     print(f"📊 Project: {os.getenv('LANGCHAIN_PROJECT', 'default')}")
-    print("🔍 Callback operations will be traced\n")
+    print("🔍 All LangChain operations will be traced")
+    print("🌐 Dashboard: https://smith.langchain.com")
+    print("=" * 70 + "\n")
 else:
-    print("⚠️  LangSmith не ввімкнений\n")
+    print("⚠️  LangSmith not enabled. Add to .env:")
+    print("   LANGCHAIN_TRACING_V2=true")
+    print("   LANGCHAIN_API_KEY=ls__your-key\n")
+
+# Print observability stack summary
+print("=" * 70)
+print("📊 OBSERVABILITY STACK SUMMARY")
+print("=" * 70)
+print(f"1. LangSmith:        {'✅ Active' if os.getenv('LANGCHAIN_TRACING_V2') == 'true' else '❌ Disabled'}")
+print(f"2. Phoenix Arize:    {'✅ Active' if PHOENIX_AVAILABLE else '❌ Not installed'}")
+print("3. Custom Callbacks: ✅ Active (Logging, Security, Tokens)")
+print("=" * 70 + "\n")
 
 
 # ============================================================================
@@ -97,6 +158,9 @@ def execute_trade(symbol: str, quantity: int, action: str) -> str:
 class LoggingCallback(BaseCallbackHandler):
     """
     Офіційний LangChain 1.0 Callback Handler для детального логування
+
+    Працює разом з Phoenix Arize - Phoenix отримує structured traces,
+    а цей callback логує human-readable output.
     """
 
     def __init__(self):
@@ -126,6 +190,8 @@ class LoggingCallback(BaseCallbackHandler):
         print(f"📝 LOGGING CALLBACK: LLM Call #{self.llm_calls} Started")
         print(f"⏰ Time: {log_entry['timestamp']}")
         print(f"📏 Prompt length: {log_entry['prompt_length']} chars")
+        if PHOENIX_AVAILABLE:
+            print(f"🔥 Phoenix: Trace captured at http://localhost:6006")
         print(f"{'='*60}\n")
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
@@ -166,7 +232,7 @@ class LoggingCallback(BaseCallbackHandler):
 
         print(f"\n{'='*60}")
         print(f"✅ TOOL COMPLETED")
-        print(f"📤 Output: {str(output)[:100]}...")
+        print(f"📤 Output: {output[:100]}...")
         print(f"{'='*60}\n")
 
     def get_stats(self):
@@ -269,67 +335,28 @@ class TokenCountCallback(BaseCallbackHandler):
             "max_tokens": self.max_tokens
         }
 
-class PerformanceCallback(BaseCallbackHandler):
-    """
-    Callback для моніторингу часу виконання
-    """
-    def __init__(self):
-        super().__init__()
-        self.start_time = None
-        self.end_time = None
-        
-    def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any) -> None:
-        """Викликається ПЕРЕД кожним викликом LLM"""
-        self.start_time = datetime.now().timestamp()
-        
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Викликається ПІСЛЯ кожного виклику LLM"""
-        self.end_time = datetime.now().timestamp()
-        print(f"{'='*60}\n")
-        if self.start_time is not None:
-            print(f"Виклик LLM тривав: {self.end_time - self.start_time} секунд\n")
-
-    def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs: Any) -> None:
-        """Викликається ПЕРЕД кожним викликом tool"""
-        self.start_time = datetime.now().timestamp()
-        
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
-        """Викликається ПІСЛЯ кожного виклику tool"""
-        self.end_time = datetime.now().timestamp()
-        print(f"{'='*60}\n")
-        if self.start_time is not None:
-            print(f"Виклик tool тривав: {self.end_time - self.start_time} секунд\n")
-        
-    def get_stats(self):
-        """Повертає статистику часу виконання"""
-        return {
-            "start_time": self.start_time,
-            "end_time": self.end_time
-        }
 
 # ============================================================================
-# СТВОРЕННЯ АГЕНТА З CALLBACKS - ОФІЦІЙНИЙ API
+# СТВОРЕННЯ АГЕНТА З CALLBACKS + PHOENIX
 # ============================================================================
 
-def create_agent_with_callbacks():
+def create_agent_with_observability():
     """
-    Створює агента з callback handlers використовуючи ОФІЦІЙНИЙ LangChain 1.0 API
+    Створює агента з повним observability stack:
+    1. Custom Callbacks (business logic)
+    2. LangSmith (production tracing)
+    3. Phoenix Arize (development debugging)
 
-    Callbacks дозволяють:
-    - Логувати всі операції
-    - Моніторити використання токенів
-    - Перехоплювати небезпечні дії
-    - Додавати custom логіку без зміни агента
+    Всі три рівні працюють одночасно без конфліктів!
     """
     print("=" * 70)
-    print("🤖 АГЕНТ З CALLBACKS - LangChain 1.0 (ОФІЦІЙНИЙ API)")
+    print("🤖 АГЕНТ З MULTI-PLATFORM OBSERVABILITY")
     print("=" * 70 + "\n")
 
     # Створюємо callback instances
     logging_cb = LoggingCallback()
     security_cb = SecurityCallback()
     token_cb = TokenCountCallback(max_tokens=10000)
-    performance_cb = PerformanceCallback()
 
     # Tools
     tools = [get_stock_price, send_notification, execute_trade]
@@ -340,14 +367,14 @@ def create_agent_with_callbacks():
         print(f"  • {tool_item.name}{risk}")
     print()
 
-    print("Callback handlers (ОФІЦІЙНИЙ LangChain 1.0 API):")
-    print("  1. LoggingCallback (on_llm_start + on_llm_end + on_tool_*)")
-    print("  2. SecurityCallback (on_agent_action)")
-    print("  3. TokenCountCallback (on_llm_start + on_llm_end)")
-    print("  4. PerformanceCallback (on_llm_start + on_llm_end + on_tool_start + on_tool_end)")
+    print("Observability layers:")
+    print("  1. Custom Callbacks (Logging, Security, Tokens)")
+    print("  2. LangSmith (automatic tracing)")
+    print("  3. Phoenix Arize (structured traces)")
     print()
 
     # Створюємо агента з LangChain 1.0 API
+    # Phoenix автоматично інструментує всі LangChain операції
     agent = create_agent(
         model="gpt-4o-mini",
         tools=tools,
@@ -358,49 +385,28 @@ IMPORTANT: When considering high-risk actions like execute_trade or send_notific
 Think step-by-step and use tools when needed to answer questions accurately."""
     )
 
-    return agent, logging_cb, security_cb, token_cb, performance_cb
-
-def check_phoenix_http(endpoint="localhost:4317"):
-    try:
-        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=True, timeout=2)
-        # Спроба виклику — експортер під’єднається до серверу
-        exporter.export([])
-        return True
-    except Exception:
-        return False
+    return agent, logging_cb, security_cb, token_cb
 
 
 # ============================================================================
-# ТЕСТУВАННЯ АГЕНТА З CALLBACKS
+# ТЕСТУВАННЯ АГЕНТА З MULTI-PLATFORM OBSERVABILITY
 # ============================================================================
 
-def test_agent_with_callbacks():
-    """Тестує агента з різними callback scenarios"""
+def test_agent_with_observability():
+    """Тестує агента з повним observability stack"""
 
-    if check_phoenix_http():
-        print ("Використання Phoenix для трасування\n")
-        tracer_provider = register()
-        LangChainInstrumentor(tracer_provider=tracer_provider).instrument(skip_dep_check=True)
-    else:
-        print ("Phoenix трасування неможливе, оскільки сервер недоступний\n")
-
-    agent, logging_cb, security_cb, token_cb, performance_cb = create_agent_with_callbacks()
+    agent, logging_cb, security_cb, token_cb = create_agent_with_observability()
 
     test_queries = [
         {
             "query": "What's the current price of AAPL stock?",
-            "description": "Safe query - callbacks log everything",
+            "description": "Safe query - all observability platforms capture this",
             "expected": "get_stock_price tool call"
         },
         {
             "query": "Get TSLA price and send me notification about it",
-            "description": "Contains HIGH-RISK tool - security callback detects it",
-            "expected": "SecurityCallback logs HIGH-RISK action"
-        },
-        {
-            "query": "Execute trade: buy 100 shares of GOOGL",
-            "description": "HIGH-RISK action - security callback warns",
-            "expected": "SecurityCallback detects execute_trade"
+            "description": "Contains HIGH-RISK tool - security callback + Phoenix trace",
+            "expected": "SecurityCallback + Phoenix span for risky action"
         }
     ]
 
@@ -413,10 +419,11 @@ def test_agent_with_callbacks():
         print("-" * 70 + "\n")
 
         try:
-            # LangChain 1.0 create_agent invoke з callbacks
-            result = agent_executor.invoke({
+            # LangChain 1.0 invoke з callbacks
+            # Phoenix автоматично захоплює всі операції через instrumentation
+            result = agent.invoke({
                 "messages": [{"role": "user", "content": test["query"]}]
-            }, config={"callbacks": [logging_cb, security_cb, token_cb, performance_cb]})
+            }, config={"callbacks": [logging_cb, security_cb, token_cb]})
 
             # Extract output from messages
             if isinstance(result, dict) and "messages" in result:
@@ -430,6 +437,11 @@ def test_agent_with_callbacks():
             print("-" * 70)
             print(f"Output: {output}\n")
 
+            if PHOENIX_AVAILABLE:
+                print("🔥 Check Phoenix UI for detailed traces: http://localhost:6006")
+            if os.getenv("LANGCHAIN_TRACING_V2") == "true":
+                print("📊 Check LangSmith for production traces: https://smith.langchain.com")
+
         except Exception as e:
             print(f"\n❌ ERROR: {e}\n")
             import traceback
@@ -437,34 +449,37 @@ def test_agent_with_callbacks():
 
         input("\n⏸️  Press Enter to continue to next test...\n")
 
-    # Виводимо статистику всіх callbacks
+    # Виводимо статистику всіх observability layers
     print("\n" + "=" * 70)
-    print("📊 CALLBACK STATISTICS")
+    print("📊 MULTI-PLATFORM OBSERVABILITY STATISTICS")
     print("=" * 70 + "\n")
 
-    print("Logging Callback:")
+    print("Custom Callbacks:")
+    print("-" * 40)
     logging_stats = logging_cb.get_stats()
     print(f"  LLM calls: {logging_stats['llm_calls']}")
     print(f"  Tool calls: {logging_stats['tool_calls']}")
     print(f"  Total logs: {logging_stats['total_logs']}")
     print()
 
-    print("Security Callback:")
     security_stats = security_cb.get_stats()
-    print(f"  Blocked calls: {security_stats['blocked_calls']}")
-    print(f"  High-risk tools: {', '.join(security_stats['high_risk_tools'])}")
+    print(f"  High-risk detections: {security_stats['blocked_calls']}")
+    print(f"  Monitored tools: {', '.join(security_stats['high_risk_tools'])}")
     print()
 
-    print("Token Counter Callback:")
     token_stats = token_cb.get_stats()
     print(f"  Total tokens: {token_stats['total_tokens']}")
     print(f"  Calls over limit: {token_stats['calls_over_limit']}")
     print()
 
-    print("Performance Callback:")
-    performance_stats = performance_cb.get_stats()
-    print(f"  Start time: {performance_stats['start_time']}")
-    print(f"  End time: {performance_stats['end_time']}")
+    print("External Platforms:")
+    print("-" * 40)
+    if PHOENIX_AVAILABLE:
+        print("  🔥 Phoenix Arize: http://localhost:6006")
+        print("     → Detailed traces, embeddings, spans")
+    if os.getenv("LANGCHAIN_TRACING_V2") == "true":
+        print("  📊 LangSmith: https://smith.langchain.com")
+        print("     → Production monitoring, costs, analytics")
     print()
 
 
@@ -474,21 +489,42 @@ def test_agent_with_callbacks():
 
 if __name__ == "__main__":
     print("\n")
-    print("🎯 LangChain 1.0 - Agent with Official Callback API")
+    print("🎯 Multi-Platform Observability Demo")
     print("=" * 70)
     print()
-    print("Features:")
-    print("  ✅ ОФІЦІЙНИЙ BaseCallbackHandler API")
-    print("  ✅ on_llm_start + on_llm_end hooks")
-    print("  ✅ on_tool_start + on_tool_end hooks")
-    print("  ✅ on_agent_action для перехоплення дій")
-    print("  ✅ Real financial data (yfinance)")
-    print("  ✅ Security callback (detects risky actions)")
-    print("  ✅ Token counting callback")
-    print("  ✅ Performance monitoring callback")
-    print("  ✅ LangSmith automatic tracing")
+    print("This demo shows LangChain agent with 3 observability layers:")
     print()
+    print("  1️⃣  Custom Callbacks (business logic)")
+    print("     ✅ Logging (on_llm_start, on_llm_end)")
+    print("     ✅ Security (on_agent_action)")
+    print("     ✅ Token counting (cost control)")
+    print()
+    print("  2️⃣  LangSmith (production monitoring)")
+    print("     ✅ Automatic tracing")
+    print("     ✅ Cost tracking")
+    print("     ✅ Performance analytics")
+    print()
+    print("  3️⃣  Phoenix Arize (development/debugging)")
+    print("     ✅ Structured traces")
+    print("     ✅ Embedding visualization")
+    print("     ✅ Local deployment")
+    print()
+    print("All three work together without conflicts!")
     print("=" * 70 + "\n")
+
+    # Перевірка Phoenix server
+    if PHOENIX_AVAILABLE:
+        print("=" * 70)
+        print("⚠️  IMPORTANT: Make sure Phoenix server is running!")
+        print("=" * 70)
+        print()
+        print("In a separate terminal, run:")
+        print("  python -m phoenix.server.main serve")
+        print()
+        print("Then access Phoenix UI at: http://localhost:6006")
+        print("=" * 70 + "\n")
+
+        input("Press Enter when Phoenix server is ready...\n")
 
     # Перевірка API ключів
     if not os.getenv("OPENAI_API_KEY"):
@@ -497,13 +533,17 @@ if __name__ == "__main__":
         exit(1)
 
     try:
-        test_agent_with_callbacks()
+        test_agent_with_observability()
 
         print("\n" + "=" * 70)
         print("✅ ALL TESTS COMPLETED")
         print("=" * 70)
-        print("\n💡 Check LangSmith dashboard to see callback traces:")
-        print("   https://smith.langchain.com/\n")
+        print("\n💡 View traces in:")
+        if PHOENIX_AVAILABLE:
+            print("   🔥 Phoenix: http://localhost:6006")
+        if os.getenv("LANGCHAIN_TRACING_V2") == "true":
+            print("   📊 LangSmith: https://smith.langchain.com")
+        print()
 
     except KeyboardInterrupt:
         print("\n\n⏹️  Tests interrupted by user")

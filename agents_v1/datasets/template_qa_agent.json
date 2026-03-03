@@ -1,0 +1,79 @@
+{
+  "name": "qa-agent-template",
+  "description": "Template dataset for Q&A agents - factual, explanatory, and recommendation questions",
+  "examples": [
+    {
+      "inputs": {
+        "question": "What is [CONCEPT/TECHNOLOGY]?"
+      },
+      "outputs": {
+        "expected": "Clear definition with key characteristics, examples, and context. Should be accessible yet accurate."
+      },
+      "metadata": {
+        "category": "definition",
+        "difficulty": "easy"
+      }
+    },
+    {
+      "inputs": {
+        "question": "How does [TECHNOLOGY/PROCESS] work?"
+      },
+      "outputs": {
+        "expected": "Step-by-step explanation of mechanism or process. Include diagrams/examples conceptually if helpful."
+      },
+      "metadata": {
+        "category": "explanation",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "inputs": {
+        "question": "Why should I use [TOOL/APPROACH] instead of [ALTERNATIVE]?"
+      },
+      "outputs": {
+        "expected": "Comparative benefits, use cases where it excels, trade-offs, and clear recommendation."
+      },
+      "metadata": {
+        "category": "recommendation",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "inputs": {
+        "question": "When is it appropriate to use [PATTERN/TECHNIQUE]?"
+      },
+      "outputs": {
+        "expected": "Specific scenarios, prerequisites, anti-patterns (when NOT to use), and decision criteria."
+      },
+      "metadata": {
+        "category": "when-to-use",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "inputs": {
+        "question": "What are the pros and cons of [APPROACH]?"
+      },
+      "outputs": {
+        "expected": "Balanced list of advantages and disadvantages with context for each point."
+      },
+      "metadata": {
+        "category": "pros-cons",
+        "difficulty": "easy"
+      }
+    },
+    {
+      "inputs": {
+        "question": "How do I troubleshoot [COMMON PROBLEM]?"
+      },
+      "outputs": {
+        "expected": "Diagnostic steps, common causes, solutions, and prevention tips."
+      },
+      "metadata": {
+        "category": "troubleshooting",
+        "difficulty": "hard"
+      }
+    }
+  ],
+  "instructions": "Customize placeholders for your domain. Add questions covering: basics, intermediate concepts, advanced topics, and edge cases."
+}

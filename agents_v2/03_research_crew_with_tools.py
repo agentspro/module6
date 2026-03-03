@@ -18,6 +18,7 @@ Python: 3.10-3.13
 """
 
 import os
+import warnings
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import (
@@ -28,6 +29,9 @@ from crewai.tools import tool
 from typing import Dict, Any
 import json
 
+# duckduckgo_search перейменували в ddgs, але ddgs зависає на macOS — тримаємо старий пакет
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*renamed.*ddgs.*")
+
 # Load environment variables
 load_dotenv()
 
@@ -36,8 +40,8 @@ if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 
-# Custom tools using @tool decorator (CrewAI native API)
-@tool("analyze_data")
+# Custom tools using @tool decorator (CORRECT LangChain API)
+@tool
 def analyze_data(data_json: str) -> str:
     """Analyze JSON data and return statistical insights. Input should be a valid JSON string."""
     try:
@@ -75,7 +79,7 @@ def analyze_data(data_json: str) -> str:
         return f"Error analyzing data: {str(e)}"
 
 
-@tool("calculate_metrics")
+@tool
 def calculate_metrics(expression: str) -> str:
     """Safely evaluate mathematical expressions. Input should be a Python expression like '2 + 2' or 'sum([1,2,3])'."""
     try:
@@ -86,9 +90,31 @@ def calculate_metrics(expression: str) -> str:
     except Exception as e:
         return f"Error in calculation: {str(e)}"
 
-# File tools
+@tool
+def web_search(query: str) -> str:
+    """Search the web for current information using DuckDuckGo. Use for researching topics, finding articles and documentation."""
+    from duckduckgo_search import DDGS
+
+    try:
+        results = DDGS().text(query, max_results=5)
+        if not results:
+            return f"No results for: {query}"
+
+        formatted = []
+        for i, r in enumerate(results, 1):
+            formatted.append(
+                f"{i}. {r.get('title', 'No title')}\n"
+                f"   {r.get('body', '')[:200]}\n"
+                f"   Source: {r.get('href', '')}"
+            )
+        return "\n\n".join(formatted)
+    except Exception as e:
+        return f"Error searching web: {str(e)}"
+
+
+# File tools (restrict directory to project root to avoid scanning venv/)
 file_read_tool = FileReadTool()
-directory_read_tool = DirectoryReadTool()
+directory_read_tool = DirectoryReadTool(directory="..")
 
 
 def create_research_crew():
@@ -104,28 +130,6 @@ def create_research_crew():
         Crew: Research crew with tools
     """
 
-    # Web search tool using DuckDuckGo (no API key needed, CrewAI-native)
-    from duckduckgo_search import DDGS
-
-    @tool("web_search")
-    def web_search(query: str) -> str:
-        """Search the web for current information using DuckDuckGo. Input should be a search query string."""
-        try:
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=5))
-            if not results:
-                return f"No results found for '{query}'"
-            formatted = []
-            for i, r in enumerate(results, 1):
-                title = r.get('title', 'No title')
-                body = r.get('body', '')[:200]
-                formatted.append(f"{i}. {title}\n   {body}")
-            return "\n\n".join(formatted)
-        except Exception as e:
-            return f"Error searching web: {str(e)}"
-
-    search_tool = web_search
-
     # Define agents with specific tools
     researcher = Agent(
         role="Senior Data Researcher",
@@ -137,9 +141,9 @@ def create_research_crew():
             "experience in data research and information retrieval."
         ),
         tools=[
+            web_search,
             file_read_tool,
             directory_read_tool,
-            search_tool,
         ],
         verbose=True,
         allow_delegation=False,
@@ -264,8 +268,8 @@ def main():
     print("This crew demonstrates tool integration:")
     print()
     print("RESEARCHER")
-    print("  Tools: FileReadTool, DirectoryReadTool")
-    print("  Purpose: Gather information from local sources")
+    print("  Tools: DuckDuckGo Search, FileReadTool, DirectoryReadTool")
+    print("  Purpose: Gather information from web and local sources")
     print()
     print("ANALYST")
     print("  Tools: DataAnalyzer, Calculator")
@@ -279,10 +283,10 @@ def main():
     print()
 
     # NOTE: This crew uses REAL tools:
-    # - Web search via DuckDuckGo for current information
+    # - Web search via DuckDuckGo (no API key needed)
     # - File reading/directory tools for local data
     # - Data analysis and calculation tools
-    print("Using REAL APIs (no sample/mock data):")
+    print("Using REAL tools (no API keys needed for search):")
     print("  - DuckDuckGo Search for web research")
     print("  - File I/O tools for document analysis")
     print("  - Data analysis tools for metrics")
@@ -325,7 +329,7 @@ def example_with_custom_tools():
     Example showing custom tool creation with @tool decorator.
     """
 
-    @tool("custom_formatter")
+    @tool
     def custom_formatter(text: str) -> str:
         """Format text to uppercase."""
         return text.upper()

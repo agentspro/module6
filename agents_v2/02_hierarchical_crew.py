@@ -499,8 +499,8 @@ Manager will:
 6. Validate final deliverables
 
 ✅ АВТОМАТИЧНЕ ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ:
-- Цей скрипт використовує FileWriteTool для автоматичного збереження
-- Створюється агент "Documentation Specialist" з FileWriteTool
+- Цей скрипт використовує FileWriterTool для автоматичного збереження
+- Створюється агент "Documentation Specialist" з FileWriterTool
 - Останній Task збирає всі результати та зберігає у project_deliverables.md
 - Результати також виводяться в консоль для перегляду
 
@@ -511,7 +511,7 @@ Manager will:
   documentation_specialist = Agent(
       role="Documentation Specialist",
       goal="Compile and save all project deliverables",
-      tools=[FileWriteTool()]
+      tools=[FileWriterTool()]
   )
 
   save_task = Task(

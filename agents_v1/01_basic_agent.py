@@ -8,16 +8,19 @@ LangSmith Integration: Автоматично ввімкнений через en
 
 РЕАЛЬНІ ІНСТРУМЕНТИ:
 - Weather: OpenWeatherMap API
-- Search: DuckDuckGo Search (ddgs)
+- Search: DuckDuckGo (без API ключа)
 - Calculator: Безпечний numexpr
 """
 
 import os
+import warnings
 import requests
-from langchain_core.tools import tool
-from ddgs import DDGS
+from langchain.tools import tool  # Офіційний імпорт згідно LangChain docs
 from dotenv import load_dotenv
 import numexpr as ne
+
+# duckduckgo_search перейменували в ddgs, але ddgs зависає на macOS — тримаємо старий пакет
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*renamed.*ddgs.*")
 
 # LangChain 1.0 API
 from langchain.agents import create_agent
@@ -118,7 +121,7 @@ def calculate(expression: str) -> str:
 @tool
 def web_search(query: str) -> str:
     """
-    Search the web for current information using DuckDuckGo Search.
+    Search the web for current information using DuckDuckGo.
 
     Args:
         query: Search query
@@ -128,14 +131,14 @@ def web_search(query: str) -> str:
 
     Use when user asks about current events, news, or information that needs web lookup.
     """
+    from duckduckgo_search import DDGS
+
     try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=3))
+        results = DDGS().text(query, max_results=3)
 
         if not results:
             return f"No results found for '{query}'"
 
-        # Форматуємо результати
         formatted_results = []
         for i, result in enumerate(results, 1):
             title = result.get('title', 'No title')

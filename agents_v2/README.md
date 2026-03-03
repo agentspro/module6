@@ -528,6 +528,97 @@ langmem>=0.1.0          # Advanced memory (опціонально)
 # Sequential process
 ```
 
+---
+
+## Observability Demo Scripts
+
+Цей репозиторій включає демонстраційні скрипти з інтеграцією observability платформ:
+
+### 02_hierarchical_crew_langfuse.py - LangFuse для Hierarchical Process
+
+**Мета:** Демонструє LangFuse observability для hierarchical CrewAI з manager delegation.
+
+**Особливості:**
+- Production-ready моніторинг для CrewAI
+- Відстежування manager delegation рішень
+- Трекінг виконання задач через спеціалістів
+- Аналітика та метрики LLM викликів
+
+**Налаштування:**
+```bash
+# Встановити LangFuse
+pip install langfuse
+
+# Зареєструватись на https://cloud.langfuse.com
+# Додати до .env:
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_HOST=https://cloud.langfuse.com
+
+# Запустити демо
+python 02_hierarchical_crew_langfuse.py
+```
+
+**Доступ:** https://cloud.langfuse.com
+
+**Що побачите:**
+- Manager delegation decisions в LangFuse dashboard
+- Виконання кожного агента (Researcher, Writer, Editor)
+- Token usage та costs для кожної задачі
+- Повний execution timeline hierarchical процесу
+
+---
+
+### 03_research_crew_phoenix.py - Phoenix Arize для Tools Tracking
+
+**Мета:** Демонструє Phoenix Arize для відстежування tool executions в CrewAI.
+
+**Особливості:**
+- Локальна open-source observability
+- Відстежування tool invocations (search_documentation, analyze_data, calculate_metrics)
+- Візуалізація RAG-подібних workflows
+- Детальні traces для development/debugging
+
+**Налаштування:**
+```bash
+# Встановити Phoenix
+pip install arize-phoenix openinference-instrumentation-crewai
+
+# Термінал 1: Запустити Phoenix server
+python -m phoenix.server.main serve
+
+# Термінал 2: Запустити демо
+python 03_research_crew_phoenix.py
+```
+
+**Доступ:** http://localhost:6006
+
+**Що побачите:**
+- Повний timeline виконання: Research → Analysis → Writing
+- Кожен tool call з inputs/outputs
+- LLM calls для кожного агента
+- Performance metrics та latency
+- Execution flow visualization
+
+---
+
+## Порівняння Observability Платформ для CrewAI
+
+| Платформа | Тип | Найкраще для | Demo Script |
+|-----------|-----|--------------|-------------|
+| **LangFuse** | Open-source/Cloud | Production monitoring, Hierarchical | 02_hierarchical_crew_langfuse.py |
+| **Phoenix Arize** | Open-source | Development, Tools tracking | 03_research_crew_phoenix.py |
+| **LangSmith** | Commercial | LangChain integration | Працює автоматично через env vars |
+
+**Рекомендації:**
+- **Development:** Phoenix Arize (локальний, detailed traces)
+- **Production:** LangFuse (cloud, analytics, prompt management)
+- **LangChain apps:** LangSmith (native integration)
+
+Детальні інструкції по налаштуванню observability для всіх скриптів: [CLAUDE.md](../CLAUDE.md#observability-platforms-integration)
+
+---
+
 ## Ресурси
 
 ### Офіційна документація

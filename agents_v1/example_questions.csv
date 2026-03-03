@@ -1,0 +1,4 @@
+question,expected_answer,difficulty
+What is LangSmith?,"LangSmith is a platform for developing, monitoring, and testing LLM applications",easy
+How to create a dataset?,Use client.create_dataset() or upload CSV/DataFrame,medium
+What are evaluation metrics?,"Metrics include relevance, helpfulness, accuracy, and completeness",medium
