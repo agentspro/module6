@@ -1,0 +1,66 @@
+{
+  "name": "mcp-research-agent-eval",
+  "description": "Unified evaluation dataset for MCP Research Agent. Covers trend analysis, data analysis, recommendations, and multi-step research queries.",
+  "examples": [
+    {
+      "inputs": {"question": "What are the latest trends in AI agent architectures?"},
+      "outputs": {"expected": "Recent trends include multi-agent systems with supervisor patterns, LangGraph-based orchestration, tool-use agents, and production-grade frameworks focusing on observability, memory, and human-in-the-loop."},
+      "metadata": {"category": "trend-analysis", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "How is LangChain evolving in 2024-2025 and what new patterns are emerging?"},
+      "outputs": {"expected": "LangChain evolved to v1.0 with create_agent API, LangGraph for stateful workflows, LCEL chains, and deeper integration with observability platforms like LangSmith."},
+      "metadata": {"category": "trend-analysis", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "What are the key trends in AI observability and monitoring for LLM applications?"},
+      "outputs": {"expected": "Key trends include distributed tracing for LLM calls, token cost tracking, evaluation-driven development, platforms like LangSmith/Phoenix/LangFuse, and OpenTelemetry integration for AI workloads."},
+      "metadata": {"category": "trend-analysis", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "Analyze the adoption metrics for LangChain in production systems"},
+      "outputs": {"expected": "LangChain adoption shows strong growth with increasing enterprise usage, positive satisfaction metrics, and recommendations for scalability improvements and integration capabilities."},
+      "metadata": {"category": "data-analysis", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "What are the key performance metrics for evaluating AI agent quality?"},
+      "outputs": {"expected": "Key metrics include answer relevancy, faithfulness to context, contextual precision/recall, latency, token usage efficiency, tool call success rate, and task completion rate."},
+      "metadata": {"category": "data-analysis", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "Compare adoption rates and developer satisfaction across major AI agent frameworks"},
+      "outputs": {"expected": "Comparison should cover LangChain, CrewAI, AutoGen, and similar frameworks with adoption data, community size, GitHub activity, and developer satisfaction surveys."},
+      "metadata": {"category": "data-analysis", "difficulty": "hard"}
+    },
+    {
+      "inputs": {"question": "Provide strategic recommendations for implementing AI agents in enterprise"},
+      "outputs": {"expected": "Recommendations should include phased rollout strategy, starting with low-risk use cases, ensuring observability from day one, establishing evaluation pipelines, and building internal expertise."},
+      "metadata": {"category": "recommendations", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "What best practices should teams follow when deploying LLM-based agents to production?"},
+      "outputs": {"expected": "Best practices include comprehensive testing with evaluation datasets, guardrails for safety, rate limiting, fallback strategies, cost monitoring, human-in-the-loop for critical decisions, and continuous evaluation."},
+      "metadata": {"category": "recommendations", "difficulty": "medium"}
+    },
+    {
+      "inputs": {"question": "How should organizations choose between single-agent and multi-agent architectures?"},
+      "outputs": {"expected": "Choice depends on task complexity, need for specialization, latency requirements, and cost constraints. Single agents suit simple tasks; multi-agent excels at complex workflows requiring diverse expertise."},
+      "metadata": {"category": "recommendations", "difficulty": "hard"}
+    },
+    {
+      "inputs": {"question": "Research observability platforms for AI agents, analyze their features, and recommend the best approach"},
+      "outputs": {"expected": "Should cover LangSmith, Phoenix Arize, and LangFuse with feature comparison, pricing, ease of integration, and recommendations based on use case (development vs production)."},
+      "metadata": {"category": "multi-step", "difficulty": "hard"}
+    },
+    {
+      "inputs": {"question": "Investigate RAG architectures for AI agents, compare vector stores, and propose an optimal retrieval pipeline"},
+      "outputs": {"expected": "Should research RAG patterns (naive, agentic, corrective), compare FAISS/Chroma/Pinecone, and propose a pipeline with query rewriting, relevance grading, and fallback strategies."},
+      "metadata": {"category": "multi-step", "difficulty": "hard"}
+    },
+    {
+      "inputs": {"question": "Analyze the trade-offs between different LLM providers for agent workloads, compare costs, and recommend a model selection strategy"},
+      "outputs": {"expected": "Should compare OpenAI, Anthropic, Google, and open-source models on cost, latency, quality, and recommend a routing strategy using cheaper models for simple tasks and premium models for complex reasoning."},
+      "metadata": {"category": "multi-step", "difficulty": "hard"}
+    }
+  ]
+}

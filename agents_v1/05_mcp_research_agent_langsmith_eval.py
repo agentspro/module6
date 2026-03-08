@@ -75,7 +75,7 @@ os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGCHAIN_PROJECT", "mcp-research-a
 # ============================================================================
 
 from langsmith import Client
-from langsmith.evaluation import evaluate, LangChainStringEvaluator
+from langsmith.evaluation import evaluate
 from langsmith.schemas import Run, Example
 
 # LangChain imports
@@ -201,72 +201,65 @@ def research_agent_predict(inputs: Dict[str, Any]) -> Dict[str, Any]:
 # LANGSMITH DATASET CREATION
 # ============================================================================
 
-def create_evaluation_dataset(client: Client, dataset_name: str) -> str:
+def ensure_dataset_exists(client: Client, dataset_name: str) -> str:
     """
-    Create LangSmith dataset with test examples.
+    Перевірити що dataset існує в LangSmith.
+    Якщо ні — завантажити з локального JSON файлу.
 
     Args:
         client: LangSmith client
-        dataset_name: Name for the dataset
+        dataset_name: Ім'я dataset
 
     Returns:
         Dataset name
     """
 
     print("\n" + "="*70)
-    print("📊 CREATING LANGSMITH DATASET")
+    print("📊 ПЕРЕВІРКА LANGSMITH DATASET")
     print("="*70 + "\n")
 
-    # Check if dataset already exists
+    # Перевірка існуючого dataset
     try:
-        existing_datasets = list(client.list_datasets())
-        for ds in existing_datasets:
+        for ds in client.list_datasets():
             if ds.name == dataset_name:
-                print(f"✅ Dataset '{dataset_name}' already exists")
-                print(f"   Using existing dataset\n")
+                print(f"✅ Dataset '{dataset_name}' знайдено в LangSmith")
+                print(f"   Використовуємо існуючий dataset\n")
                 return dataset_name
     except Exception as e:
-        print(f"⚠️  Warning checking existing datasets: {e}")
+        print(f"⚠️  Помилка перевірки datasets: {e}")
 
-    # Create new dataset
-    print(f"Creating new dataset: {dataset_name}")
+    # Dataset не знайдено — завантажуємо з JSON
+    print(f"⚠️  Dataset '{dataset_name}' не знайдено в LangSmith")
+    print(f"   Завантажуємо з локального файлу...\n")
+
+    import json
+    dataset_file = os.path.join(os.path.dirname(__file__), "datasets", "eval_dataset.json")
+
+    if not os.path.exists(dataset_file):
+        print(f"❌ Файл не знайдено: {dataset_file}")
+        print("   Спочатку завантажте dataset: python upload_dataset.py --platform langsmith")
+        sys.exit(1)
+
+    with open(dataset_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
     dataset = client.create_dataset(
         dataset_name=dataset_name,
-        description="Evaluation dataset for MCP Research Agent"
+        description=data.get("description", "")
     )
 
-    # Define test examples
-    examples = [
-        {
-            "question": "What are the latest trends in AI agent architectures?",
-            "reference_answer": "Recent trends in AI agent architectures include multi-agent systems, LangChain/LangGraph patterns, and modern orchestration frameworks with focus on production readiness and observability."
-        },
-        {
-            "question": "Analyze the adoption metrics for LangChain in production systems",
-            "reference_answer": "LangChain adoption shows strong growth with increasing enterprise usage, positive satisfaction metrics, and recommendations for scalability improvements and integration capabilities."
-        },
-        {
-            "question": "Provide strategic recommendations for implementing AI agents in enterprise",
-            "reference_answer": "Strategic recommendations should include comprehensive analysis, actionable insights on scalability and integration, training programs, and clear implementation roadmap with success metrics."
-        },
-        {
-            "question": "Research observability platforms for AI agents, analyze their features, and recommend the best approach",
-            "reference_answer": "Comprehensive research should cover multiple observability platforms (LangSmith, Phoenix, LangFuse), analyze features, provide comparative analysis, and give clear recommendations based on use case."
-        }
-    ]
-
-    # Add examples to dataset
-    for i, example in enumerate(examples, 1):
+    for i, example in enumerate(data["examples"], 1):
         client.create_example(
-            inputs={"question": example["question"]},
-            outputs={"expected": example["reference_answer"]},
+            inputs=example["inputs"],
+            outputs=example["outputs"],
+            metadata=example.get("metadata", {}),
             dataset_id=dataset.id
         )
-        print(f"   ✅ Added example {i}: {example['question'][:50]}...")
+        q = example["inputs"]["question"][:50]
+        print(f"   ✅ [{i}/{len(data['examples'])}] {q}...")
 
-    print(f"\n✅ Created dataset with {len(examples)} examples")
-    print(f"   View at: https://smith.langchain.com\n")
+    print(f"\n✅ Завантажено {len(data['examples'])} прикладів в LangSmith")
+    print(f"   Перегляд: https://smith.langchain.com → Datasets & Testing\n")
 
     return dataset_name
 
@@ -456,9 +449,9 @@ def main():
     print(f"✅ Connected to LangSmith")
     print(f"   Project: {os.environ['LANGCHAIN_PROJECT']}\n")
 
-    # Create dataset
-    dataset_name = "mcp-research-agent-eval-dataset"
-    dataset_name = create_evaluation_dataset(client, dataset_name)
+    # Перевірка/створення dataset
+    dataset_name = "mcp-research-agent-eval"
+    dataset_name = ensure_dataset_exists(client, dataset_name)
 
     # Create evaluators
     evaluators = create_custom_evaluators()

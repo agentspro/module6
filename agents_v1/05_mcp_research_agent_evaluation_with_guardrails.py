@@ -326,9 +326,32 @@ IMPORTANT: Always provide factual, unbiased, professional responses. Avoid toxic
 # EVALUATION TEST CASES WITH GUARDRAILS
 # ============================================================================
 
+def load_dataset_examples() -> list:
+    """
+    Завантажити test cases з unified JSON dataset.
+
+    Returns:
+        Список прикладів з dataset
+    """
+    import json
+
+    dataset_file = os.path.join(os.path.dirname(__file__), "datasets", "eval_dataset.json")
+
+    if not os.path.exists(dataset_file):
+        print(f"❌ Файл не знайдено: {dataset_file}")
+        print("   Переконайтесь що datasets/eval_dataset.json існує")
+        sys.exit(1)
+
+    with open(dataset_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    print(f"✅ Завантажено {len(data['examples'])} прикладів з {dataset_file}")
+    return data["examples"]
+
+
 def create_test_cases_with_guardrails(guard: Optional[Guard]) -> List[LLMTestCase]:
     """
-    Create evaluation test cases with Guardrails validation.
+    Створити evaluation test cases з unified dataset + Guardrails validation.
 
     Args:
         guard: Optional Guard instance
@@ -338,81 +361,41 @@ def create_test_cases_with_guardrails(guard: Optional[Guard]) -> List[LLMTestCas
     """
 
     print("\n" + "="*70)
-    print("🧪 CREATING TEST CASES WITH GUARDRAILS VALIDATION")
+    print("🧪 СТВОРЕННЯ TEST CASES З UNIFIED DATASET + GUARDRAILS")
     print("="*70 + "\n")
 
+    examples = load_dataset_examples()
     agent = GuardedResearchAgent(guard)
     test_cases = []
     validation_results = []
 
-    # Test Case 1: Basic Research Query
-    print("📝 Test Case 1: Basic Research Query")
-    query1 = "What are the latest trends in AI agent architectures?"
-    result1 = agent.research(query1)
+    for i, example in enumerate(examples, 1):
+        query = example["inputs"]["question"]
+        expected = example["outputs"]["expected"]
+        category = example.get("metadata", {}).get("category", "unknown")
 
-    test_case1 = LLMTestCase(
-        input=query1,
-        actual_output=result1["answer"],
-        retrieval_context=result1["contexts"],
-        expected_output="Should discuss multi-agent systems, LangChain patterns, and modern architectures"
-    )
-    test_cases.append(test_case1)
-    validation_results.append(result1["validation"])
+        print(f"📝 Test Case {i}/{len(examples)}: [{category}] {query[:60]}...")
+        result = agent.research(query)
 
-    # Display validation result
-    val_status = "✅ PASSED" if result1["validation"]["passed"] else "❌ FAILED"
-    print(f"   Validation: {val_status}")
-    if result1["validation"].get("violations"):
-        print(f"   Violations: {result1['validation']['violations']}")
-    if result1["validation"].get("warnings"):
-        print(f"   Warnings: {result1['validation']['warnings']}")
-    print()
+        test_case = LLMTestCase(
+            input=query,
+            actual_output=result["answer"],
+            retrieval_context=result["contexts"],
+            expected_output=expected
+        )
+        test_cases.append(test_case)
+        validation_results.append(result["validation"])
 
-    # Test Case 2: Data Analysis Query
-    print("📝 Test Case 2: Data Analysis Query")
-    query2 = "Analyze the adoption metrics for LangChain in production systems"
-    result2 = agent.research(query2)
+        # Вивід результатів валідації
+        val_status = "✅ PASSED" if result["validation"]["passed"] else "❌ FAILED"
+        print(f"   Validation: {val_status}")
+        if result["validation"].get("violations"):
+            print(f"   Violations: {result['validation']['violations']}")
+        if result["validation"].get("warnings"):
+            print(f"   Warnings: {result['validation']['warnings']}")
+        print()
 
-    test_case2 = LLMTestCase(
-        input=query2,
-        actual_output=result2["answer"],
-        retrieval_context=result2["contexts"],
-        expected_output="Should include metrics, trends, and statistical analysis"
-    )
-    test_cases.append(test_case2)
-    validation_results.append(result2["validation"])
-
-    val_status = "✅ PASSED" if result2["validation"]["passed"] else "❌ FAILED"
-    print(f"   Validation: {val_status}")
-    if result2["validation"].get("violations"):
-        print(f"   Violations: {result2['validation']['violations']}")
-    if result2["validation"].get("warnings"):
-        print(f"   Warnings: {result2['validation']['warnings']}")
-    print()
-
-    # Test Case 3: Synthesis Query
-    print("📝 Test Case 3: Synthesis and Recommendations")
-    query3 = "Provide strategic recommendations for implementing AI agents in enterprise"
-    result3 = agent.research(query3)
-
-    test_case3 = LLMTestCase(
-        input=query3,
-        actual_output=result3["answer"],
-        retrieval_context=result3["contexts"],
-        expected_output="Should synthesize findings and provide actionable recommendations"
-    )
-    test_cases.append(test_case3)
-    validation_results.append(result3["validation"])
-
-    val_status = "✅ PASSED" if result3["validation"]["passed"] else "❌ FAILED"
-    print(f"   Validation: {val_status}")
-    if result3["validation"].get("violations"):
-        print(f"   Violations: {result3['validation']['violations']}")
-    if result3["validation"].get("warnings"):
-        print(f"   Warnings: {result3['validation']['warnings']}")
-    print()
-
-    # Validation Summary
+    # Підсумок валідації
     print("="*70)
     print("🛡️  GUARDRAILS VALIDATION SUMMARY")
     print("="*70 + "\n")
@@ -436,7 +419,7 @@ def create_test_cases_with_guardrails(guard: Optional[Guard]) -> List[LLMTestCas
             print(f"   • {warning}")
         print()
 
-    print(f"✅ Created {len(test_cases)} test cases with Guardrails validation\n")
+    print(f"✅ Створено {len(test_cases)} test cases з Guardrails validation\n")
 
     return test_cases
 

@@ -53,7 +53,7 @@ try:
         ContextualRelevancyMetric,
         GEval
     )
-    from deepeval.test_case import LLMTestCase
+    from deepeval.test_case import LLMTestCase, LLMTestCaseParams
     from deepeval.dataset import EvaluationDataset
 except ImportError:
     print("❌ ERROR: DeepEval not installed")
@@ -196,78 +196,64 @@ Use the appropriate tools for each request and provide thorough, comprehensive r
 # EVALUATION TEST CASES
 # ============================================================================
 
+def load_dataset_examples() -> List[Dict[str, Any]]:
+    """
+    Завантажити test cases з unified JSON dataset.
+
+    Returns:
+        Список прикладів з dataset
+    """
+    import json
+
+    dataset_file = os.path.join(os.path.dirname(__file__), "datasets", "eval_dataset.json")
+
+    if not os.path.exists(dataset_file):
+        print(f"❌ Файл не знайдено: {dataset_file}")
+        print("   Переконайтесь що datasets/eval_dataset.json існує")
+        sys.exit(1)
+
+    with open(dataset_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    print(f"✅ Завантажено {len(data['examples'])} прикладів з {dataset_file}")
+    return data["examples"]
+
+
 def create_test_cases() -> List[LLMTestCase]:
     """
-    Create evaluation test cases for the research agent.
+    Створити evaluation test cases з unified dataset.
+    Читає питання з JSON, прогоняє агента для отримання actual_output та retrieval_context.
 
     Returns:
         List of LLMTestCase objects
     """
 
     print("\n" + "="*70)
-    print("🧪 CREATING EVALUATION TEST CASES")
+    print("🧪 СТВОРЕННЯ EVALUATION TEST CASES З UNIFIED DATASET")
     print("="*70 + "\n")
 
+    examples = load_dataset_examples()
     agent = ResearchAgentEvaluator()
     test_cases = []
 
-    # Test Case 1: Basic Research Query
-    print("📝 Test Case 1: Basic Research Query")
-    query1 = "What are the latest trends in AI agent architectures?"
-    result1 = agent.research(query1)
+    for i, example in enumerate(examples, 1):
+        query = example["inputs"]["question"]
+        expected = example["outputs"]["expected"]
+        category = example.get("metadata", {}).get("category", "unknown")
 
-    test_case1 = LLMTestCase(
-        input=query1,
-        actual_output=result1["answer"],
-        retrieval_context=result1["contexts"],
-        expected_output="Should discuss multi-agent systems, LangChain patterns, and modern architectures"
-    )
-    test_cases.append(test_case1)
-    print(f"   ✅ Created test case with {len(result1['contexts'])} context chunks\n")
+        print(f"📝 Test Case {i}/{len(examples)}: [{category}] {query[:60]}...")
+        result = agent.research(query)
 
-    # Test Case 2: Data Analysis Query
-    print("📝 Test Case 2: Data Analysis Query")
-    query2 = "Analyze the adoption metrics for LangChain in production systems"
-    result2 = agent.research(query2)
+        test_case = LLMTestCase(
+            input=query,
+            actual_output=result["answer"],
+            retrieval_context=result["contexts"],
+            expected_output=expected
+        )
+        test_cases.append(test_case)
+        print(f"   ✅ Створено test case з {len(result['contexts'])} context chunks\n")
 
-    test_case2 = LLMTestCase(
-        input=query2,
-        actual_output=result2["answer"],
-        retrieval_context=result2["contexts"],
-        expected_output="Should include metrics, trends, and statistical analysis"
-    )
-    test_cases.append(test_case2)
-    print(f"   ✅ Created test case with {len(result2['contexts'])} context chunks\n")
-
-    # Test Case 3: Synthesis Query
-    print("📝 Test Case 3: Synthesis and Recommendations")
-    query3 = "Provide strategic recommendations for implementing AI agents in enterprise"
-    result3 = agent.research(query3)
-
-    test_case3 = LLMTestCase(
-        input=query3,
-        actual_output=result3["answer"],
-        retrieval_context=result3["contexts"],
-        expected_output="Should synthesize findings and provide actionable recommendations"
-    )
-    test_cases.append(test_case3)
-    print(f"   ✅ Created test case with {len(result3['contexts'])} context chunks\n")
-
-    # Test Case 4: Complex Multi-Step Research
-    print("📝 Test Case 4: Complex Multi-Step Research")
-    query4 = "Research observability platforms for AI agents, analyze their features, and recommend the best approach"
-    result4 = agent.research(query4)
-
-    test_case4 = LLMTestCase(
-        input=query4,
-        actual_output=result4["answer"],
-        retrieval_context=result4["contexts"],
-        expected_output="Should use multiple tools, provide analysis, and give clear recommendations"
-    )
-    test_cases.append(test_case4)
-    print(f"   ✅ Created test case with {len(result4['contexts'])} context chunks\n")
-
-    print(f"✅ Created {len(test_cases)} test cases total\n")
+    print(f"✅ Створено {len(test_cases)} test cases\n")
 
     return test_cases
 
@@ -336,9 +322,9 @@ def setup_metrics() -> List:
             "Evaluate the logical flow and synthesis of information"
         ],
         evaluation_params=[
-            LLMTestCase.input,
-            LLMTestCase.actual_output,
-            LLMTestCase.retrieval_context
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.ACTUAL_OUTPUT,
+            LLMTestCaseParams.RETRIEVAL_CONTEXT
         ],
         threshold=0.7,
         model="gpt-4o-mini"
@@ -358,9 +344,9 @@ def setup_metrics() -> List:
             "Assess how well tool outputs were integrated into the final answer"
         ],
         evaluation_params=[
-            LLMTestCase.input,
-            LLMTestCase.actual_output,
-            LLMTestCase.retrieval_context
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.ACTUAL_OUTPUT,
+            LLMTestCaseParams.RETRIEVAL_CONTEXT
         ],
         threshold=0.7,
         model="gpt-4o-mini"
@@ -395,9 +381,6 @@ def run_evaluation():
     # Setup metrics
     metrics = setup_metrics()
 
-    # Create dataset
-    dataset = EvaluationDataset(test_cases=test_cases)
-
     # Run evaluation
     print("="*70)
     print("🚀 RUNNING EVALUATION")
@@ -406,9 +389,8 @@ def run_evaluation():
     print("⏳ Evaluating test cases... (this may take a few minutes)\n")
 
     results = evaluate(
-        test_cases=dataset,
+        test_cases=test_cases,
         metrics=metrics,
-        print_results=True  # Print detailed results
     )
 
     # Display summary

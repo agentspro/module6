@@ -1,0 +1,42 @@
+{
+  "name": "manual-demo-dataset",
+  "description": "Dataset створений вручну для демонстрації",
+  "examples": [
+    {
+      "inputs": {
+        "question": "Що таке LangGraph?"
+      },
+      "outputs": {
+        "expected": "LangGraph — це фреймворк для створення stateful multi-actor applications з LLM, побудований на графах станів (StateGraph)."
+      },
+      "metadata": {
+        "category": "concepts",
+        "difficulty": "easy"
+      }
+    },
+    {
+      "inputs": {
+        "question": "Як працює RAG pipeline?"
+      },
+      "outputs": {
+        "expected": "RAG (Retrieval Augmented Generation): запит → пошук релевантних документів у vector store → передача контексту в LLM → генерація відповіді на основі знайдених джерел."
+      },
+      "metadata": {
+        "category": "architecture",
+        "difficulty": "medium"
+      }
+    },
+    {
+      "inputs": {
+        "question": "Які переваги supervisor pattern над sequential?"
+      },
+      "outputs": {
+        "expected": "Supervisor pattern: динамічний routing задач, паралельне виконання, адаптивна логіка. Sequential: лише лінійний pipeline без розгалужень."
+      },
+      "metadata": {
+        "category": "architecture",
+        "difficulty": "hard"
+      }
+    }
+  ]
+}
